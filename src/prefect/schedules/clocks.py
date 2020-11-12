@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta
-from typing import Any, Iterable, List, Set, Union
+from typing import Any, Iterable, List, Set, Union, Optional
 
 import pendulum
 import pytz
@@ -16,10 +16,12 @@ class ClockEvent:
         start_time: datetime,
         parameter_defaults: dict = None,
         labels: List[str] = None,
+        flow_run_name_template: Optional[str] = None,
     ) -> None:
         self.start_time = start_time
         self.parameter_defaults = parameter_defaults or dict()
         self.labels = labels
+        self.flow_run_name_template = flow_run_name_template
 
     def __eq__(self, other: Any) -> bool:
         if not isinstance(other, (ClockEvent, datetime)):
@@ -74,6 +76,7 @@ class Clock:
         end_date: datetime = None,
         parameter_defaults: dict = None,
         labels: List[str] = None,
+        flow_run_name_template: Optional[str] = None,
     ):
         if start_date is not None:
             start_date = pendulum.instance(start_date)
@@ -83,6 +86,7 @@ class Clock:
         self.end_date = end_date
         self.parameter_defaults = parameter_defaults or dict()
         self.labels = labels
+        self.flow_run_name_template = flow_run_name_template
 
     def events(self, after: datetime = None) -> Iterable[ClockEvent]:
         """
@@ -140,6 +144,7 @@ class IntervalClock(Clock):
         end_date: datetime = None,
         parameter_defaults: dict = None,
         labels: List[str] = None,
+        flow_run_name_template: Optional[str] = None,
     ):
         if not isinstance(interval, timedelta):
             raise TypeError("Interval must be a timedelta.")
@@ -152,6 +157,7 @@ class IntervalClock(Clock):
             end_date=end_date,
             parameter_defaults=parameter_defaults,
             labels=labels,
+            flow_run_name_template=flow_run_name_template,
         )
 
     def events(self, after: datetime = None) -> Iterable[ClockEvent]:
@@ -205,6 +211,7 @@ class IntervalClock(Clock):
                 start_time=next_date,
                 parameter_defaults=self.parameter_defaults,
                 labels=self.labels,
+                flow_run_name_template=self.flow_run_name_template,
             )
             interval += self.interval
 
@@ -254,6 +261,7 @@ class CronClock(Clock):
         parameter_defaults: dict = None,
         labels: List[str] = None,
         day_or: bool = None,
+        flow_run_name_template: Optional[str] = None,
     ):
         # build cron object to check the cron string - will raise an error if it's invalid
         if not croniter.is_valid(cron):
@@ -265,6 +273,7 @@ class CronClock(Clock):
             end_date=end_date,
             parameter_defaults=parameter_defaults,
             labels=labels,
+            flow_run_name_template=flow_run_name_template,
         )
 
     def events(self, after: datetime = None) -> Iterable[ClockEvent]:
@@ -328,6 +337,7 @@ class CronClock(Clock):
                 start_time=next_date,
                 parameter_defaults=self.parameter_defaults,
                 labels=self.labels,
+                flow_run_name_template=self.flow_run_name_template,
             )
 
 
@@ -349,12 +359,14 @@ class DatesClock(Clock):
         dates: List[datetime],
         parameter_defaults: dict = None,
         labels: List[str] = None,
+        flow_run_name_template: Optional[str] = None,
     ):
         super().__init__(
             start_date=min(dates),
             end_date=max(dates),
             parameter_defaults=parameter_defaults,
             labels=labels,
+            flow_run_name_template=flow_run_name_template,
         )
         self.dates = dates
 
@@ -375,6 +387,7 @@ class DatesClock(Clock):
                 start_time=date,
                 parameter_defaults=self.parameter_defaults,
                 labels=self.labels,
+                flow_run_name_template=self.flow_run_name_template,
             )
             for date in sorted(self.dates)
             if date > after
